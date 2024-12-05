@@ -1,87 +1,137 @@
+#include <windows.h>
 #include <iostream>
 #include <chrono>
 #include <vector>
-#include <string>
-#include <windows.h>
 #include <fstream>
-#include "helper.h"  
+#include "helper.h" 
 
-const int PAGE_SIZE = 4096;  
-const int ITERATIONS = 500;
+void GenerateLargeFile(const std::string& filename, size_t sizeInMB) {
+    const size_t sizeInBytes = sizeInMB * 1024 * 1024;
+    std::ofstream file(filename, std::ios::binary);
 
-void measure_page_fault_time(std::vector<double>& times, std::ofstream& dataFile) {
-    char buffer[PAGE_SIZE] = {};  // Buffer to fill the file
+    if (!file) {
+        std::cerr << "Failed to create file: " << filename << std::endl;
+        return;
+    }
 
-    for (int i = 0; i < ITERATIONS; ++i) {
-        std::string filename = "page_fault_test_file_" + std::to_string(i) + ".bin";
+    std::vector<char> buffer(1024 * 1024, 'A'); 
+    for (size_t i = 0; i < sizeInMB; ++i) {
+        file.write(buffer.data(), buffer.size());
+    }
 
-        // Write a single page to a unique file
-        {
-            std::ofstream ofs(filename, std::ios::binary | std::ios::trunc);
-            ofs.write(buffer, PAGE_SIZE);
-            ofs.flush();
-            ofs.close();
-        }
+    file.close();
+    std::cout << "File generated: " << filename << " (" << sizeInMB << " MB)\n";
+}
 
-        HANDLE file = CreateFileA(filename.c_str(), GENERIC_READ | GENERIC_WRITE, 0, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
-        HANDLE mapping = CreateFileMappingA(file, nullptr, PAGE_READONLY, 0, PAGE_SIZE, nullptr);
-        if (mapping == nullptr) {
-            CloseHandle(file);
-            std::cerr << "Failed to create file mapping.\n";
-            return;
-        }
 
-        // Map the file view
-        char* mapped_view = static_cast<char*>(MapViewOfFile(mapping, FILE_MAP_READ, 0, 0, PAGE_SIZE));
-        if (mapped_view == nullptr) {
-            CloseHandle(mapping);
-            CloseHandle(file);
-            std::cerr << "Failed to map file view.\n";
-            return;
-        }
+void MeasureFaultedAccesses(const std::string& filename, size_t sizeInMB) {
+    const size_t PAGE_SIZE = 4096;
+    const size_t sizeInBytes = sizeInMB * 1024 * 1024;
 
+    HANDLE hFile = CreateFile(
+        filename.c_str(),
+        GENERIC_READ | GENERIC_WRITE, 
+        FILE_SHARE_READ,              
+        NULL,
+        OPEN_EXISTING,
+        FILE_ATTRIBUTE_NORMAL,
+        NULL
+    );
+
+    if (hFile == INVALID_HANDLE_VALUE) {
+        std::cerr << "Failed to open file: " << filename << std::endl;
+        return;
+    }
+
+    HANDLE hMapping = CreateFileMapping(
+        hFile,
+        NULL,
+        PAGE_READONLY,
+        0,
+        0,
+        NULL
+    );
+
+    if (!hMapping) {
+        std::cerr << "Failed to create file mapping!" << std::endl;
+        CloseHandle(hFile);
+        return;
+    }
+
+    char* buffer = (char*)MapViewOfFile(
+        hMapping,
+        FILE_MAP_READ,
+        0,
+        0,
+        0
+    );
+
+    if (!buffer) {
+        std::cerr << "Failed to map file view!" << std::endl;
+        CloseHandle(hMapping);
+        CloseHandle(hFile);
+        return;
+    }
+
+    std::vector<double> faultedAccessTimes;
+
+    for (size_t i = 0; i < sizeInBytes; i += PAGE_SIZE) {
         auto start = std::chrono::high_resolution_clock::now();
-        volatile char first_byte = mapped_view[0];  
+        volatile char value = buffer[i]; // Access each page
         auto end = std::chrono::high_resolution_clock::now();
 
-        std::chrono::duration<double, std::nano> elapsed = end - start;
-        double elapsed_ns = elapsed.count();
-        times.push_back(elapsed_ns);
-
-        dataFile << "Iteration " << i + 1 << ": " << elapsed_ns << " ns\n";
-
-        UnmapViewOfFile(mapped_view);
-        CloseHandle(mapping);
-        CloseHandle(file);
+        std::chrono::duration<double, std::micro> elapsed = end - start;
+        double timeTaken = elapsed.count();
 
 
-        std::remove(filename.c_str());
+        if (timeTaken > 0) {
+            faultedAccessTimes.push_back(timeTaken);
+        }
+    }
+
+
+    UnmapViewOfFile(buffer);
+    CloseHandle(hMapping);
+    CloseHandle(hFile);
+
+    if (!faultedAccessTimes.empty()) {
+        double mean = calculateMean(faultedAccessTimes);
+        double stdDev = calculateStandardDeviation(faultedAccessTimes, mean);
+
+        std::cout << "Faulted accesses statistics:\n";
+        std::cout << "Mean time: " << mean << " microseconds\n";
+        std::cout << "Standard deviation: " << stdDev << " microseconds\n";
+    } else {
+        std::cout << "No faulted accesses were recorded.\n";
     }
 }
 
 int main() {
-    std::vector<double> times;
-    times.reserve(ITERATIONS);
+    const std::string filename = "large_test_file.bin";
+    const size_t fileSizeMB = 1600; 
 
-    std::ofstream dataFile("page_fault_times.txt");
-    if (!dataFile) {
-        std::cerr << "Failed to open output file.\n";
-        return 1;
-    }
+    GenerateLargeFile(filename, fileSizeMB);
 
-    measure_page_fault_time(times, dataFile);
-    dataFile.close();
-
-    double mean_time = calculateMean(times);
-    double stddev_time = calculateStandardDeviation(times, mean_time);
-    double stddev_percent = calculateStdDevPercentage(times, mean_time);
-
-    std::cout << "Average page fault time: " << mean_time << " ns\n";
-    std::cout << "Standard deviation: " << stddev_time << " ns\n";
-    std::cout << "Standard deviation percent: " << stddev_percent << "%\n";
+    std::cout << "Measuring page fault times...\n";
+    MeasureFaultedAccesses(filename, fileSizeMB);
 
     return 0;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

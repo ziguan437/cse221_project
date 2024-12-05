@@ -38,14 +38,14 @@ void timer_measurement() {
 
 
     double trimmed_mean_time = calculateTrimmedMean(timings, 0.05);
-    std::cout << "Trimmed mean time over " << num_runs << " runs: " << trimmed_mean_time << " microseconds\n";
+    std::cout << "Trimmed mean time over " << num_runs << " runs: " << trimmed_mean_time/100000 << " microseconds\n";
 
 
     double stddev = calculateStandardDeviation(timings, trimmed_mean_time);
-    std::cout << "Standard deviation: " << stddev << " microseconds\n";
+    std::cout << "StdDev" << stddev/100000 << " microseconds\n";
 
     double stddev_percent = calculateStdDevPercentage(timings, trimmed_mean_time);
-    std::cout << "Standard deviation percentage: " << stddev_percent << "% of the mean\n";
+    std::cout << "StdDev %" << stddev_percent << "% of the mean\n";
 }
 
 int main() {

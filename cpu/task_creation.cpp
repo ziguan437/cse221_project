@@ -71,7 +71,7 @@ double measureThreadCreation(int iterations, std::vector<double>& times, std::of
 }
 
 int main() {
-    const int iterations = 10000;
+    const int iterations = 5000;
     std::vector<double> processCycles;
     std::vector<double> threadCycles;
 

@@ -93,19 +93,20 @@ int main() {
     CloseHandle(event1);
     CloseHandle(event2);
 
-    double trimmedMeanThreadSwitchTime = calculateMean(threadSwitchTimes);
-    double stdDevThreadSwitchTime = calculateStandardDeviation(threadSwitchTimes, trimmedMeanThreadSwitchTime);
-    double stdDevPercentThreadSwitchTime = calculateStdDevPercentage(threadSwitchTimes, trimmedMeanThreadSwitchTime);
+    std::vector<double> TrimmedthreadSwitchTimes = removeOutliers(threadSwitchTimes);
+    double trimmedMeanThreadSwitchTime = calculateMean(TrimmedthreadSwitchTimes);
+    double stdDevThreadSwitchTime = calculateStandardDeviation(TrimmedthreadSwitchTimes, trimmedMeanThreadSwitchTime);
+    double stdDevPercentThreadSwitchTime = calculateStdDevPercentage(TrimmedthreadSwitchTimes, trimmedMeanThreadSwitchTime);
 
-    std::cout << "Mean time: " << trimmedMeanThreadSwitchTime / 2 << " ns\n";
+    std::cout << "Mean time: " << trimmedMeanThreadSwitchTime << " ns\n";
     std::cout << "Standard deviation: " << stdDevThreadSwitchTime << " ns\n";
     std::cout << "Standard deviation percent: " << stdDevPercentThreadSwitchTime << " %\n";
 
-    double trimmedMeanProcessSwitchTime = calculateMean(processSwitchTimes;
+    double trimmedMeanProcessSwitchTime = calculateMean(processSwitchTimes);
     double stdDevProcessSwitchTime = calculateStandardDeviation(processSwitchTimes, trimmedMeanProcessSwitchTime);
     double stdDevPercentProcessSwitchTime = calculateStdDevPercentage(processSwitchTimes, trimmedMeanProcessSwitchTime);
 
-    std::cout << "Mean time: " << trimmedMeanProcessSwitchTime / 2 << " ns\n";
+    std::cout << "Mean time: " << trimmedMeanProcessSwitchTime << " ns\n";
     std::cout << "Standard deviation: " << stdDevProcessSwitchTime << " ns\n";
     std::cout << "Standard deviation percent: " << stdDevPercentProcessSwitchTime << " %\n";
     return 0;

@@ -18,7 +18,7 @@ double calculateTrimmedMean(const std::vector<double>& times, double trimPercent
     std::sort(sortedTimes.begin(), sortedTimes.end());
 
     size_t trimCount = static_cast<size_t>(sortedTimes.size() * trimPercent);
-    if (2 * trimCount >= sortedTimes.size()) return 0.0; // Ensure there's data left after trimming
+    if (2 * trimCount >= sortedTimes.size()) return 0.0; 
 
     auto start = sortedTimes.begin() + trimCount;
     auto end = sortedTimes.end() - trimCount;
@@ -49,6 +49,33 @@ double calculateStdDevPercentage(const std::vector<double>& times, double mean) 
     }
     double variance = sum / times.size();
     double stddev = std::sqrt(variance);
-    return (stddev / mean) * 100.0;  // Convert standard deviation to a percentage of the mean
+    return (stddev / mean) * 100.0; 
+}
+
+std::vector<double> removeOutliers(const std::vector<double>& values) {
+    if (values.size() < 4) {
+        return values;
+    }
+
+    std::vector<double> sortedValues = values;
+    std::sort(sortedValues.begin(), sortedValues.end());
+
+    size_t n = sortedValues.size();
+    double Q1 = sortedValues[n / 4];
+    double Q3 = sortedValues[(3 * n) / 4];
+
+    double IQR = Q3 - Q1;
+
+    double lowerBound = Q1 - 1.5 * IQR;
+    double upperBound = Q3 + 1.5 * IQR;
+
+    std::vector<double> filteredValues;
+    for (double val : values) {
+        if (val >= lowerBound && val <= upperBound) {
+            filteredValues.push_back(val);
+        }
+    }
+
+    return filteredValues;
 }
 

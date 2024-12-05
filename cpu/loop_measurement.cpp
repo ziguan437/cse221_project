@@ -60,8 +60,8 @@ void measureLoopUnrolling(int iterations, int runs) {
     double mean_unrolled = calculateMean(times_unrolled);
     double stddev_percentage_unrolled = calculateStdDevPercentage(times_unrolled, mean_unrolled);
 
-    std::cout << "Regular loop - Mean: " << mean_regular << " microseconds, StdDev: " << stddev_percentage_regular << "%\n";
-    std::cout << "Unrolled loop - Mean: " << mean_unrolled << " microseconds, StdDev: " << stddev_percentage_unrolled << "%\n";
+    std::cout << "Regular loop Mean: " << mean_regular << " microseconds, StdDev: " << stddev_percentage_regular << "%\n";
+    std::cout << "Unrolled loop Mean: " << mean_unrolled << " microseconds, StdDev: " << stddev_percentage_unrolled << "%\n";
 }
 
 
@@ -101,14 +101,15 @@ void measureBranchPrediction(int iterations, int runs) {
     double mean_unpredictable = calculateMean(times_unpredictable);
     double stddev_percentage_unpredictable = calculateStdDevPercentage(times_unpredictable, mean_unpredictable);
 
-    std::cout << "Predictable branch - Mean: " << mean_predictable << " microseconds, StdDev: " << stddev_percentage_predictable << "%\n";
-    std::cout << "Unpredictable branch - Mean: " << mean_unpredictable << " microseconds, StdDev: " << stddev_percentage_unpredictable << "%\n";
+    std::cout << "Predictable branch Mean: " << mean_predictable << " microseconds, StdDev: " << stddev_percentage_predictable << "%\n";
+    std::cout << "Unpredictable branch Mean: " << mean_unpredictable << " microseconds, StdDev: " << stddev_percentage_unpredictable << "%\n";
 }
 
 int main() {
     const int iterations = 20000000;  // Number of loop iterations
     const int runs = 100;            // Number of test runs for averaging
 
+    std::cout << "Measurement over 20000000 loops: \n";
     measureLoopOverhead(iterations, runs);
     measureLoopUnrolling(iterations, runs);
     measureBranchPrediction(iterations, runs);
